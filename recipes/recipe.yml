@@ -1,13 +1,15 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 # image will be published to ghcr.io/<user>/<name>
-name: alteredcarbon-os
+name: al-khwarizmi-os
 # description will be included in the image's metadata
-description: This is my personal OS image.
+description: Personal Hyprland/fedarchy desktop, baked into a Fedora Sway Atomic image.
 
-# the base image to build on top of (FROM) and the version tag to use
-base-image: ghcr.io/ublue-os/silverblue-main
-image-version: latest # You can pin to a specific version of Fedora as well
+# Fedora Sway Atomic itself, not a ublue-os respin -- this recipe bakes in the
+# same fedarchy (Hyprland) desktop + package set as the reference machine
+# directly, rather than layering it at runtime via fedarchy's own installer.
+base-image: quay.io/fedora-ostree-desktops/sericea
+image-version: "44"
 
 # module configuration, executed in order
 # you can include multiple instances of the same module
@@ -15,23 +17,153 @@ modules:
   - type: files
     files:
       - source: system
-        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+        destination: / # copies files/system/* (everything inside it) into the image's root folder /
+        # includes: repo files under etc/yum.repos.d/ (read by the dnf module
+        # below), and the first-run unit + script under usr/.
 
   - type: dnf
-    repos:
-      copr:
-        - atim/starship
     install:
       packages:
-        - micro
-        - starship
-        - alacritty # terminal the first-run setup script launches
-    remove:
-      packages:
-        # example: removing firefox (in favor of the flatpak)
-        # "firefox" is the main package, "firefox-langpacks" is a dependency
-        - firefox
-        - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+        # --- Hyprland desktop stack (lionheartp/Hyprland COPR; repo file
+        # shipped via the files module above, not the `repos:` shorthand, so
+        # its priority=10 + exclude= tuning survives byte for byte) ---
+        - hyprland
+        - hyprland-uwsm
+        - hyprland-guiutils
+        - hyprland-qt-support
+        - hyprpicker
+        - hyprsunset
+        - gpu-screen-recorder
+        - xdg-desktop-portal-hyprland
+        - uwsm
+
+        # --- the Quickshell shell (bar/launcher/notifications/OSD/lock) ---
+        - quickshell
+
+        # --- terminal + shell/CLI tools ---
+        - alacritty
+        - xdg-terminal-exec
+        - tmux
+        - fastfetch
+        - pamixer
+        - cliphist
+        - udiskie
+        - wtype
+        - ydotool
+        - xsettingsd
+        - sassc # GTK theme build
+        - socat
+        - inotify-tools
+        - inxi
+        - plocate
+        - util-linux-script
+        - luarocks
+        - compat-lua
+        - compat-lua-libs
+        - libxkbcommon-utils
+        - perl-JSON-PP
+
+        # --- editors + a minimal compiler for Emacs native-comp ---
+        - vim
+        - git
+        - emacs
+        - gcc
+        - gcc-c++
+        - make
+        - patch
+        - redhat-rpm-config
+        - rpm-build
+
+        # --- dev toolchains kept on the host (rest lives in a Toolbox) ---
+        - autoconf
+        - autoconf-archive
+        - automake
+        - libtool
+        - clang
+        - llvm
+        - rust
+        - cargo
+        - dotnet-runtime-9.0
+        - java-latest-openjdk
+        - mariadb-connector-c
+        - libpq
+        - python3-pip
+        - python3-poetry-core
+        - code # Visual Studio Code (Microsoft repo)
+
+        # --- desktop session pieces ---
+        - nautilus
+        - fuse
+        - fuse-libs
+        - gvfs-mtp
+        - gvfs-nfs
+        - ffmpegthumbnailer
+        - power-profiles-daemon
+        - bluez-tools
+        - chromium
+        - firefoxpwa
+        - egl-wayland
+        - qt5-qtwayland
+        - qt6-qtmultimedia
+        - mpv
+        - mpv-mpris
+        - tesseract
+        - tiny-dfr # T2 Mac keyboard/touch-bar support
+        - cups-pdf
+
+        # --- input methods ---
+        - fcitx5
+        - fcitx5-gtk
+        - fcitx5-qt5
+        - fcitx5-qt6
+
+        # --- fonts + theming ---
+        - jetbrains-mono-fonts
+        - cascadia-mono-nf-fonts
+        - google-noto-sans-fonts
+        - google-noto-sans-cjk-fonts
+        - fontawesome-fonts-web
+        - fontawesome4-fonts
+        - terminus-fonts-console
+        - yaru-icon-theme
+        - yaru-gtk3-theme
+        - yaru-gtk4-theme
+        - yaru-gtksourceview-theme
+
+        # --- pass + PIM ---
+        - pass
+        - gnome-pomodoro
+        - syncthing
+
+        # --- VPN / mesh (Mullvad + ProtonVPN + Tailscale; ExpressVPN is a
+        # Makeself .run, handled by dotfiles/scripts/82-expressvpn.sh at
+        # first-run instead, not dnf-installable) ---
+        - mullvad-vpn
+        - proton-vpn-gnome-desktop
+        - tailscale
+        - torsocks
+
+        # --- KVM/libvirt lab ---
+        - qemu-kvm
+        - libvirt
+        - libvirt-daemon-config-network
+        - libvirt-nss
+        - virt-install
+        - virt-manager
+        - virt-viewer
+        - edk2-ovmf
+        - swtpm
+        - swtpm-tools
+        - guestfs-tools
+
+        # --- networking niceties ---
+        - NetworkManager-tui
+      remove:
+        packages:
+          # Firefox comes from Flathub instead (see default-flatpaks below) --
+          # "firefox" is the main package, "firefox-langpacks" its dependency.
+          - firefox
+          - firefox-langpacks
 
   # Vendors a copy of the personal dotfiles repo into the image (build-time
   # network access only) so a fresh install has it with no network needed.
@@ -41,14 +173,43 @@ modules:
     scripts:
       - vendor-dotfiles.sh
 
+  # GUI apps kept on Flathub rather than layered -- sandboxed, independent of
+  # the OS lifecycle, same policy as the dotfiles repo's own philosophy.
+  # (Anything installed natively instead lives in the dnf module above.)
   - type: default-flatpaks
     configurations:
-      - notify: true # Send notification after install/uninstall is finished (true/false)
+      - notify: true
         scope: system
-        # If no repo information is specified, Flathub will be used by default
-        install: # system flatpaks we want all users to have and not remove
+        install:
           - org.mozilla.firefox
-          - org.gnome.Loupe
-      - scope: user # Also add Flathub user repo, but no user packages
+          - org.gnome.Extensions
+      - scope: user
+        install:
+          - org.gimp.GIMP
+          - org.gnome.Calculator
+          - org.gnome.Evince
+          - org.gnome.NautilusPreviewer
+          - org.kde.kdenlive
+          - com.obsproject.Studio
+          - com.github.PintaProject.Pinta
+          - com.github.xournalpp.xournalpp
+          - org.libreoffice.LibreOffice
+          - org.keepassxc.KeePassXC
+          - com.discordapp.Discord
+          - com.slack.Slack
+          - us.zoom.Zoom
+          - org.telegram.desktop
+          - net.ankiweb.Anki
+          - org.zotero.Zotero
+          - org.mozilla.thunderbird_esr
+          - ch.protonmail.protonmail-bridge
+          - com.github.tchx84.Flatseal
+          - org.torproject.torbrowser-launcher
+          - io.mpv.Mpv
+          - com.spotify.Client
+          - com.valvesoftware.Steam
+          - io.github.kolunmi.Bazaar
+          - ca.desrt.dconf-editor
+          - com.mattjakeman.ExtensionManager
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

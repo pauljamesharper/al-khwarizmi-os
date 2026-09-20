@@ -36,7 +36,18 @@ if [[ ! -d "$HOME/dotfiles" ]]; then
 fi
 
 if command -v alacritty >/dev/null 2>&1; then
+    # install.sh's own "Prerequisites" step (README) is normally done by hand
+    # before cloning: Homebrew backs stow + the CLI set, and install.sh
+    # hard-requires stow (`have stow || die`). Do it here instead so the
+    # automatic first-run actually gets that far unattended.
     alacritty --title "al-khwarizmi-os setup" -e bash -lc '
+        if ! command -v brew >/dev/null 2>&1; then
+            echo "Installing Homebrew (backs stow + the CLI set)..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        fi
+        command -v stow >/dev/null 2>&1 || brew install stow
+
         cd "$HOME/dotfiles" || exit 1
         ./install.sh
         echo
