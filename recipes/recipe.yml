@@ -158,12 +158,12 @@ modules:
 
         # --- networking niceties ---
         - NetworkManager-tui
-      remove:
-        packages:
-          # Firefox comes from Flathub instead (see default-flatpaks below) --
-          # "firefox" is the main package, "firefox-langpacks" its dependency.
-          - firefox
-          - firefox-langpacks
+    remove:
+      packages:
+        # Firefox comes from Flathub instead (see default-flatpaks below) --
+        # "firefox" is the main package, "firefox-langpacks" its dependency.
+        - firefox
+        - firefox-langpacks
 
   # Vendors a copy of the personal dotfiles repo into the image (build-time
   # network access only) so a fresh install has it with no network needed.
