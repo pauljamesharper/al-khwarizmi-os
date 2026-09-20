@@ -1,5 +1,7 @@
 # al-khwarizmi-os &nbsp; [![bluebuild build badge](https://github.com/pauljamesharper/al-khwarizmi-os/actions/workflows/build.yml/badge.svg)](https://github.com/pauljamesharper/al-khwarizmi-os/actions/workflows/build.yml)
 
+![Desktop screenshot](images/screenshot-all-2026-09-20_16-29-52.png)
+
 Named in honor of [Muhammad ibn Musa al-Khwarizmi](https://en.wikipedia.org/wiki/Al-Khwarizmi), the 9th-century Persian polymath whose name gave us the word *algorithm*.
 
 A personal, immutable Fedora Sway Atomic image with a [Hyprland](https://hyprland.org) desktop based on [Omarchy](https://omarchy.org) (DHH's Hyprland desktop), by way of my own [fedarchy](https://github.com/pauljamesharper/fedarchy) fork — baked directly into the OS image with [BlueBuild](https://blue-build.org) rather than layered on at runtime.
