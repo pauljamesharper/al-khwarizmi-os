@@ -1,0 +1,21 @@
+# Runs once at first login to clone the vendored dotfiles into $HOME and run
+# their (interactive) install.sh in a terminal window. See
+# /usr/bin/al-khwarizmi-first-run for the actual logic and the stamp file
+# that makes this a one-time thing.
+#
+# WantedBy=graphical-session.target, not default.target: this launches a GUI
+# terminal, so it needs the Wayland session's environment (WAYLAND_DISPLAY
+# etc.) already imported. hyprland-uwsm guarantees that by the time
+# graphical-session.target is reached; default.target has no such guarantee.
+
+[Unit]
+Description=al-khwarizmi-os first-run setup (dotfiles)
+ConditionPathExists=/usr/share/al-khwarizmi-os/dotfiles
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/al-khwarizmi-first-run
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical-session.target

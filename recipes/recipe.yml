@@ -25,12 +25,21 @@ modules:
       packages:
         - micro
         - starship
+        - alacritty # terminal the first-run setup script launches
     remove:
       packages:
         # example: removing firefox (in favor of the flatpak)
         # "firefox" is the main package, "firefox-langpacks" is a dependency
         - firefox
         - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+
+  # Vendors a copy of the personal dotfiles repo into the image (build-time
+  # network access only) so a fresh install has it with no network needed.
+  # The actual per-user setup runs at first login instead -- see
+  # al-khwarizmi-first-run.service / files/system/usr/bin/al-khwarizmi-first-run.
+  - type: script
+    scripts:
+      - vendor-dotfiles.sh
 
   - type: default-flatpaks
     configurations:
