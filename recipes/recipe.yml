@@ -63,6 +63,19 @@ modules:
         - libxkbcommon-utils
         - perl-JSON-PP
 
+        # --- voxtype (push-to-talk dictation; fedarchy's own F9/Super+Ctrl+X
+        # bindings + config.toml, see default/voxtype and
+        # default/hypr/bindings/voxtype.lua) ---
+        # NOTE: unverified in a from-scratch image build. On the reference
+        # machine this was `rpm-ostree install voxtype` against whatever repo
+        # was configured at the time -- no matching /etc/yum.repos.d/*.repo
+        # was found afterward to pin down here, and fedarchy's own installer
+        # (install/helpers/fedora-first-party.sh) is stale against it (pinned
+        # to an old aarch64-only release binary, not this rpm). If the build
+        # fails to resolve `voxtype`, that repo needs identifying and adding
+        # via a `repos:` module first, same pattern as the Hyprland COPR above.
+        - voxtype
+
         # --- editors + a minimal compiler for Emacs native-comp ---
         - vim
         - git
