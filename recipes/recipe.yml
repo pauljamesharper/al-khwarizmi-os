@@ -183,5 +183,7 @@ modules:
           - org.pulseaudio.pavucontrol # the bar's volume mixer
           - io.mpv.Mpv # video/audio player
           - org.gnome.SoundJuicer # CD ripper
+          - com.usebottles.bottles # Wine prefixes (Kindle for PC)
+          - com.calibre_ebook.calibre # e-book library
 
   - type: signing # sets up the policy & signing files for signed images
