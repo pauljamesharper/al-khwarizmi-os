@@ -7,6 +7,8 @@ on:
   push:
     paths-ignore: # don't rebuild if only documentation has changed
       - "**.md"
+      # (an empty commit changes no paths, so it doesn't build either;
+      # rebuild with workflow_dispatch or a real change)
 
   pull_request:
   workflow_dispatch: # allow manually triggering builds
