@@ -181,5 +181,7 @@ modules:
           - org.keepassxc.KeePassXC
           - org.telegram.desktop
           - org.pulseaudio.pavucontrol # the bar's volume mixer
+          - io.mpv.Mpv # video/audio player
+          - org.gnome.SoundJuicer # CD ripper
 
   - type: signing # sets up the policy & signing files for signed images
