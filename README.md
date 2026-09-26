@@ -47,7 +47,7 @@ VS Code, Homebrew, `ujust`, daily Universal Blue updates):
   portal. mango and awww come from [Terra](https://terra.fyralabs.com), limited
   to just those two packages.
 - **Login:** SDDM, running the "desk" theme from my dotfiles with the Giants
-  *Turing – von Neumann* picture.
+  *al-Khwarizmi* picture (the same one as the desktop wallpaper).
 - **Apps:** Alacritty, Emacs (pgtk), imv, and Flatpaks: Discord,
   OBS, GIMP, Slack, Spotify, KeePassXC, Telegram, pavucontrol.
 - **Dotfiles:** a copy of my
