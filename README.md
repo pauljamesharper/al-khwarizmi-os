@@ -48,8 +48,8 @@ VS Code, Homebrew, `ujust`, daily Universal Blue updates):
   to just those two packages.
 - **Login:** SDDM, running the "desk" theme from my dotfiles with the Giants
   *Turing – von Neumann* picture.
-- **Apps:** Alacritty, Emacs (pgtk), imv, Proton VPN, and Flatpaks: Discord,
-  OBS, GIMP, Slack, Spotify, KeePassXC, Telegram, pavucontrol.
+- **Apps:** Alacritty, Emacs (pgtk), imv, and Flatpaks: Discord,
+  OBS, GIMP, Slack, Spotify, KeePassXC, Telegram, pavucontrol, Proton VPN.
 - **Dotfiles:** a copy of my
   [dotfiles](https://codeberg.org/gluesniffmonkey/dotfiles/src/branch/mangowm)
   (`mangowm` branch), vendored at build time for the first login.
@@ -141,7 +141,7 @@ GitHub Actions builds the image daily and on every push
 ([`.github/workflows/build.yml`](.github/workflows/build.yml)), from
 [`recipes/recipe.yml`](recipes/recipe.yml):
 
-- `files/system/`: repo files and signing keys (Terra, Proton VPN), the
+- `files/system/`: repo files and signing keys (Terra), the
   SDDM login fix, and the first-run unit and script.
 - `files/scripts/vendor-dotfiles.sh`: clones the dotfiles into the image.
 - `files/scripts/desk-greeter.sh`: installs the SDDM "desk" theme from them.
