@@ -1,58 +1,66 @@
 #!/usr/bin/env bash
 
 # First-login setup: clones the vendored dotfiles repo into $HOME and runs
-# its (interactive) install.sh in a visible terminal. Driven by
+# the per-user steps of its aurora/setup.sh in a visible terminal. Driven by
 # al-khwarizmi-first-run.service (systemd --user, WantedBy=graphical-session
-# .target -- see that unit for why that target and not default.target).
+# .target -- see that unit for why).
+#
+# The image already carries everything setup.sh would otherwise do as root:
+# the Terra repo, the layered packages, the Plasma removal, SDDM and the
+# Flatpaks. What's left is per-user: Homebrew + mise tools, fonts, stow,
+# themes, wallpapers, the Emacs daemon, and the swap/hibernate/KVM bits that
+# depend on this machine.
 #
 # Deliberately NOT `set -e`: a failed check here (no vendored copy, dotfiles
-# already cloned, alacritty missing) should fall through to a clean exit, not
-# abort the whole script and leave the stamp file unwritten so it retries
-# forever.
+# already cloned, no terminal) should fall through to a clean exit, not abort
+# and leave the stamp file unwritten so it retries forever.
 set -uo pipefail
 
 STAMP="$HOME/.local/state/al-khwarizmi-os/first-run-done"
 VENDORED=/usr/share/al-khwarizmi-os/dotfiles
 DOTFILES_REPO=https://codeberg.org/gluesniffmonkey/dotfiles.git
+DOTFILES_BRANCH=mangowm
+STEPS="brew fonts stow session mise pim themes wallpapers apps kvm swap hibernate"
 
-# Already ran once -- nothing to do. install.sh itself is idempotent, so
-# re-running it by hand any time (`~/dotfiles/install.sh`) is always safe;
-# this stamp only controls the automatic one-shot terminal popup.
+# Already ran once. setup.sh is idempotent, so re-running it by hand
+# (`~/dotfiles/aurora/setup.sh`) is always safe; the stamp only stops this
+# automatic popup.
 [[ -e $STAMP ]] && exit 0
-
-# Nothing vendored (e.g. this image variant doesn't ship dotfiles) -- quietly
-# skip rather than error. Desktop still works fine without the personal layer.
+# Nothing vendored (a stripped-down variant of the image): skip quietly.
 [[ -d $VENDORED ]] || exit 0
 
 mkdir -p "$(dirname "$STAMP")"
 
 if [[ ! -d "$HOME/dotfiles" ]]; then
-    # Clone from the local vendored copy (fast, no network needed for this
-    # step), then repoint origin at the real remote so it's a normal clone
-    # from the user's point of view -- `git pull`/`push` just work.
-    git clone "$VENDORED" "$HOME/dotfiles"
+    # Clone the local vendored copy (no network needed), then point origin at
+    # the real remote so `git pull`/`push` just work.
+    git clone --branch "$DOTFILES_BRANCH" "$VENDORED" "$HOME/dotfiles"
     git -C "$HOME/dotfiles" remote set-url origin "$DOTFILES_REPO"
     git -C "$HOME/dotfiles" fetch origin 2>/dev/null || true
 fi
 
-if command -v alacritty >/dev/null 2>&1; then
-    # install.sh's own "Prerequisites" step (README) is normally done by hand
-    # before cloning: Homebrew backs stow + the CLI set, and install.sh
-    # hard-requires stow (`have stow || die`). Do it here instead so the
-    # automatic first-run actually gets that far unattended.
-    alacritty --title "al-khwarizmi-os setup" -e bash -lc '
-        if ! command -v brew >/dev/null 2>&1; then
-            echo "Installing Homebrew (backs stow + the CLI set)..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        fi
-        command -v stow >/dev/null 2>&1 || brew install stow
+# The unit starts with the graphical session; if the compositor hasn't
+# exported WAYLAND_DISPLAY to systemd yet, find its socket directly.
+if [[ -z ${WAYLAND_DISPLAY:-} ]]; then
+    for s in "$XDG_RUNTIME_DIR"/wayland-[0-9]*; do
+        [[ -S $s ]] && export WAYLAND_DISPLAY="${s##*/}" && break
+    done
+fi
 
-        cd "$HOME/dotfiles" || exit 1
-        ./install.sh
+if command -v alacritty >/dev/null 2>&1 && [[ -n ${WAYLAND_DISPLAY:-} ]]; then
+    alacritty --title "al-khwarizmi-os setup" -e bash -lc "
+        echo 'al-khwarizmi-os first-run: dotfiles setup ($STEPS)'
+        echo 'It asks for your password for sudo. Re-run any time with ~/dotfiles/aurora/setup.sh.'
         echo
-        read -n1 -rsp "Press any key to close this window..."
-    '
+        ~/dotfiles/aurora/setup.sh $STEPS
+        echo
+        read -n1 -rsp 'Done. Log out and back in (Super+Shift+Q) to pick everything up. Press any key to close...'
+    "
+else
+    # No terminal to show it in: leave the stamp unwritten so the next login
+    # tries again.
+    echo "al-khwarizmi-first-run: no alacritty or Wayland display; will retry next login" >&2
+    exit 0
 fi
 
 touch "$STAMP"

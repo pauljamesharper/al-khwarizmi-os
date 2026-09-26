@@ -3,226 +3,183 @@
 # image will be published to ghcr.io/<user>/<name>
 name: al-khwarizmi-os
 # description will be included in the image's metadata
-description: Personal Hyprland/fedarchy desktop, baked into a Fedora Sway Atomic image.
+description: Aurora-DX with the mango Wayland compositor in place of KDE Plasma, SDDM login and the "desk" themes.
 
-# Fedora Sway Atomic itself, not a ublue-os respin -- this recipe bakes in the
-# same fedarchy (Hyprland) desktop + package set as the reference machine
-# directly, rather than layering it at runtime via fedarchy's own installer.
-base-image: quay.io/fedora/fedora-sway-atomic
-image-version: "44"
+# Aurora-DX (Universal Blue's KDE developer image) is the base: it brings the
+# dev stack (Docker/Podman, KVM/libvirt, VS Code, Homebrew, ujust) and the
+# daily Universal Blue updates. This recipe swaps its desktop: Plasma out,
+# mango + quickshell in, SDDM with the desk theme as the login screen -- the
+# same result as the dotfiles' aurora/setup.sh gives a stock Aurora, baked
+# into the image instead of layered at runtime.
+base-image: ghcr.io/ublue-os/aurora-dx
+image-version: stable
 
 # module configuration, executed in order
-# you can include multiple instances of the same module
 modules:
   - type: files
     files:
       - source: system
-        destination: / # copies files/system/* (everything inside it) into the image's root folder /
-        # includes: repo files under etc/yum.repos.d/ (read by the dnf module
-        # below), and the first-run unit + script under usr/.
+        destination: / # copies files/system/* into the image's root
+        # includes: the Terra (mangowm, awww) and Proton VPN repo files and
+        # their signing keys, the SDDM shadow-entry fix, and the first-run
+        # unit + script.
 
   - type: dnf
-    install:
-      packages:
-        # --- Hyprland desktop stack (lionheartp/Hyprland COPR; repo file
-        # shipped via the files module above, not the `repos:` shorthand, so
-        # its priority=10 + exclude= tuning survives byte for byte) ---
-        - hyprland
-        - hyprland-uwsm
-        - hyprland-guiutils
-        - hyprland-qt-support
-        - hyprpicker
-        - hyprsunset
-        - gpu-screen-recorder
-        - xdg-desktop-portal-hyprland
-        - uwsm
-
-        # --- the Quickshell shell (bar/launcher/notifications/OSD/lock) ---
-        - quickshell
-
-        # --- terminal + shell/CLI tools ---
-        - alacritty
-        - xdg-terminal-exec
-        - tmux
-        - fastfetch
-        - pamixer
-        - cliphist
-        - udiskie
-        - wtype
-        - ydotool
-        - xsettingsd
-        - sassc # GTK theme build
-        - socat
-        - inotify-tools
-        - inxi
-        - plocate
-        - util-linux-script
-        - luarocks
-        - compat-lua
-        - compat-lua-libs
-        - libxkbcommon-utils
-        - perl-JSON-PP
-
-        # --- voxtype (push-to-talk dictation; fedarchy's own F9/Super+Ctrl+X
-        # bindings + config.toml, see default/voxtype and
-        # default/hypr/bindings/voxtype.lua) ---
-        # NOTE: unverified in a from-scratch image build. On the reference
-        # machine this was `rpm-ostree install voxtype` against whatever repo
-        # was configured at the time -- no matching /etc/yum.repos.d/*.repo
-        # was found afterward to pin down here, and fedarchy's own installer
-        # (install/helpers/fedora-first-party.sh) is stale against it (pinned
-        # to an old aarch64-only release binary, not this rpm). If the build
-        # fails to resolve `voxtype`, that repo needs identifying and adding
-        # via a `repos:` module first, same pattern as the Hyprland COPR above.
-        - voxtype
-
-        # --- editors + a minimal compiler for Emacs native-comp ---
-        - vim
-        - git
-        - emacs
-        - gcc
-        - gcc-c++
-        - make
-        - patch
-        - redhat-rpm-config
-        - rpm-build
-
-        # --- dev toolchains kept on the host (rest lives in a Toolbox) ---
-        - autoconf
-        - autoconf-archive
-        - automake
-        - libtool
-        - clang
-        - llvm
-        - rust
-        - cargo
-        - dotnet-runtime-9.0
-        - java-latest-openjdk
-        - mariadb-connector-c
-        - libpq
-        - python3-pip
-        - python3-poetry-core
-        - code # Visual Studio Code (Microsoft repo)
-
-        # --- desktop session pieces ---
-        - nautilus
-        - fuse
-        - fuse-libs
-        - gvfs-mtp
-        - gvfs-nfs
-        - ffmpegthumbnailer
-        - power-profiles-daemon
-        - bluez-tools
-        - chromium
-        - firefoxpwa
-        - egl-wayland
-        - qt5-qtwayland
-        - qt6-qtmultimedia
-        - mpv
-        - mpv-mpris
-        - tesseract
-        - tiny-dfr # T2 Mac keyboard/touch-bar support
-        - cups-pdf
-
-        # --- input methods ---
-        - fcitx5
-        - fcitx5-gtk
-        - fcitx5-qt5
-        - fcitx5-qt6
-
-        # --- fonts + theming ---
-        - jetbrains-mono-fonts
-        - cascadia-mono-nf-fonts
-        - google-noto-sans-fonts
-        - google-noto-sans-cjk-fonts
-        - fontawesome-fonts-web
-        - fontawesome4-fonts
-        - terminus-fonts-console
-        - yaru-icon-theme
-        - yaru-gtk3-theme
-        - yaru-gtk4-theme
-        - yaru-gtksourceview-theme
-
-        # --- pass + PIM ---
-        - pass
-        - gnome-pomodoro
-        - syncthing
-
-        # --- VPN / mesh (Mullvad + ProtonVPN + Tailscale; ExpressVPN is a
-        # Makeself .run, handled by dotfiles/scripts/82-expressvpn.sh at
-        # first-run instead, not dnf-installable) ---
-        - mullvad-vpn
-        - proton-vpn-gnome-desktop
-        - tailscale
-        - torsocks
-
-        # --- KVM/libvirt lab ---
-        - qemu-kvm
-        - libvirt
-        - libvirt-daemon-config-network
-        - libvirt-nss
-        - virt-install
-        - virt-manager
-        - virt-viewer
-        - edk2-ovmf
-        - swtpm
-        - swtpm-tools
-        - guestfs-tools
-
-        # --- networking niceties ---
-        - NetworkManager-tui
     remove:
       packages:
-        # Firefox comes from Flathub instead (see default-flatpaks below) --
-        # "firefox" is the main package, "firefox-langpacks" its dependency.
-        - firefox
-        - firefox-langpacks
+        # --- KDE Plasma: the whole closure, same list as the dotfiles'
+        # aurora/setup.sh AURORA_REMOVE (checked with `dnf remove --assumeno`).
+        # Kept from Aurora: Dolphin, Ark, KDE Connect (needs kde-cli-tools ->
+        # libkworkspace6), polkit-kde (mango starts it), kio/thumbnailers,
+        # kwallet, Breeze Qt style + plasma-integration. ---
+        - plasma-workspace
+        - plasma-workspace-libs
+        - plasma-workspace-wallpapers
+        - plasma-desktop
+        - plasma-desktop-doc
+        - kwin
+        - kwin-common
+        - kwin-libs
+        - aurorae
+        - plasma-login-manager
+        - kcm-plasmalogin
+        - kde-settings-plasmalogin
+        - kscreenlocker
+        - powerdevil
+        - kscreen
+        - kglobalacceld
+        - kactivitymanagerd
+        - kwrited
+        - knighttime
+        - plasma-nm
+        - plasma-nm-openconnect
+        - plasma-nm-openvpn
+        - plasma-nm-vpnc
+        - plasma-pa
+        - plasma-systemmonitor
+        - ksystemstats
+        - plasma-systemsettings
+        - kinfocenter
+        - kmenuedit
+        - plasma-welcome
+        - plasma-setup
+        - plasma-milou
+        - plasma-disks
+        - plasma-firewall
+        - plasma-firewall-firewalld
+        - plasma-thunderbolt
+        - plasma-vault
+        - plasma-keyboard
+        - kcm-plasma-keyboard
+        - plasma-browser-integration
+        - plasma-drkonqi
+        - kdeplasma-addons
+        - plasma-wallpapers-dynamic
+        - plasma-wallpapers-dynamic-builder
+        - plasma-wallpapers-dynamic-builder-bash-completion
+        - plasma-wallpapers-dynamic-builder-fish-completion
+        - plasma-wallpapers-dynamic-builder-zsh-completion
+        - plasma-print-manager
+        - plasma-print-manager-libs
+        - plasma-union
+        - plasma-oxygen
+        - plasma-oxygen-qt5
+        - plasma-oxygen-qt6
+        - plasma-lookandfeel-fedora
+        - kde-settings-plasma
+        - kate
+        - kate-krunner-plugin
+        - kate-libs
+        - kate-plugins
+        - kwrite
+        - konsole
+        - konsole-part
+        - spectacle
+        - filelight
+        - kde-partitionmanager
+        - kfind
+        - ksystemlog
+        - kjournald
+        - kjournald-libs
+        - kdebugsettings
+        - kwalletmanager5
+        - krdp
+        - krdp-libs
+        - kairpods
+        - kamera
+        - kcm_ublue
+        - krunner-bazaar
+        - kde-inotify-survey
+        - kcm-fcitx5
+        - xdg-desktop-portal-kde
+        - kde-gtk-config
+        - flatpak-kcm
+        - colord-kde
+        - bluedevil
+        - xwaylandvideobridge
+    install:
+      packages:
+        # --- login screen (the greeter runs under weston) ---
+        - sddm
+        - sddm-wayland-generic
 
-  # Vendors a copy of the personal dotfiles repo into the image (build-time
-  # network access only) so a fresh install has it with no network needed.
-  # The actual per-user setup runs at first login instead -- see
-  # al-khwarizmi-first-run.service / files/system/usr/bin/al-khwarizmi-first-run.
+        # --- mango session (mangowm and awww come from Terra) ---
+        - mangowm
+        - awww # wallpaper daemon
+        - quickshell # the bar and every popup
+        - dunst # notifications
+        - grim # screenshots
+        - slurp
+        - swayidle # lock after 10 min idle, screens off after 15
+        - swaylock
+        - wlopm
+        - wlr-randr # list outputs for monitorrule
+        - wlsunset # night light
+        - brightnessctl
+        - pamixer # volume keys
+        - cliphist # clipboard history
+        - xdg-desktop-portal-wlr # screen sharing under mango
+        - nm-connection-editor
+
+        # --- apps and theming ---
+        - alacritty # terminal (Super+Return)
+        - rofi # launcher/menus (Fedora's build has Wayland)
+        - imv # image viewer
+        - emacs-pgtk # pure-GTK Wayland Emacs, run as a daemon
+        - yaru-icon-theme # Yaru-wartybrown, inherited by the Giants icon theme
+        - proton-vpn-gnome-desktop # Proton VPN (repo shipped via files above)
+
+  # Vendors a copy of the dotfiles repo (branch mangowm) into the image, then
+  # installs the desk SDDM theme from it. Per-user setup runs at first login
+  # -- see al-khwarizmi-first-run.service / usr/bin/al-khwarizmi-first-run.
   - type: script
     scripts:
       - vendor-dotfiles.sh
+      - desk-greeter.sh
 
-  # GUI apps kept on Flathub rather than layered -- sandboxed, independent of
-  # the OS lifecycle, same policy as the dotfiles repo's own philosophy.
-  # (Anything installed natively instead lives in the dnf module above.)
+  - type: systemd
+    system:
+      enabled:
+        - sddm.service # becomes display-manager.service
+    user:
+      enabled:
+        - al-khwarizmi-first-run.service
+        - ssh-agent.socket # mango's config points SSH_AUTH_SOCK here
+
+  # GUI apps from Flathub on top of Aurora's defaults -- sandboxed and
+  # updated independently of the OS.
   - type: default-flatpaks
     configurations:
       - notify: true
         scope: system
         install:
-          - org.mozilla.firefox
-          - org.gnome.Extensions
-      - scope: user
-        install:
-          - org.gimp.GIMP
-          - org.gnome.Calculator
-          - org.gnome.Evince
-          - org.gnome.NautilusPreviewer
-          - org.kde.kdenlive
-          - com.obsproject.Studio
-          - com.github.PintaProject.Pinta
-          - com.github.xournalpp.xournalpp
-          - org.libreoffice.LibreOffice
-          - org.keepassxc.KeePassXC
-          - com.discordapp.Discord
+          - com.discordapp.Discord # Super+D
+          - com.obsproject.Studio # Super+O
+          - org.gimp.GIMP # Super+G
           - com.slack.Slack
-          - us.zoom.Zoom
-          - org.telegram.desktop
-          - net.ankiweb.Anki
-          - org.zotero.Zotero
-          - org.mozilla.thunderbird_esr
-          - ch.protonmail.protonmail-bridge
-          - com.github.tchx84.Flatseal
-          - org.torproject.torbrowser-launcher
-          - io.mpv.Mpv
           - com.spotify.Client
-          - com.valvesoftware.Steam
-          - io.github.kolunmi.Bazaar
-          - ca.desrt.dconf-editor
-          - com.mattjakeman.ExtensionManager
+          - org.keepassxc.KeePassXC
+          - org.telegram.desktop
+          - org.pulseaudio.pavucontrol # the bar's volume mixer
 
-  - type: signing # this sets up the proper policy & signing files for signed images to work fully
+  - type: signing # sets up the policy & signing files for signed images
