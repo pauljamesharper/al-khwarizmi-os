@@ -147,6 +147,7 @@ modules:
         - imv # image viewer
         - emacs-pgtk # pure-GTK Wayland Emacs, run as a daemon
         - yaru-icon-theme # Yaru-wartybrown, inherited by the Giants icon theme
+        - terminus-fonts-console # big tty font, set in /etc/vconsole.conf
 
   # Vendors a copy of the dotfiles repo (branch mangowm) into the image, then
   # installs the desk SDDM theme from it. Per-user setup runs at first login
