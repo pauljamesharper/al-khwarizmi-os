@@ -49,7 +49,7 @@ VS Code, Homebrew, `ujust`, daily Universal Blue updates):
 - **Login:** SDDM, running the "desk" theme from my dotfiles with the Giants
   *Turing – von Neumann* picture.
 - **Apps:** Alacritty, Emacs (pgtk), imv, and Flatpaks: Discord,
-  OBS, GIMP, Slack, Spotify, KeePassXC, Telegram, pavucontrol, Proton VPN.
+  OBS, GIMP, Slack, Spotify, KeePassXC, Telegram, pavucontrol.
 - **Dotfiles:** a copy of my
   [dotfiles](https://codeberg.org/gluesniffmonkey/dotfiles/src/branch/mangowm)
   (`mangowm` branch), vendored at build time for the first login.

@@ -180,6 +180,5 @@ modules:
           - org.keepassxc.KeePassXC
           - org.telegram.desktop
           - org.pulseaudio.pavucontrol # the bar's volume mixer
-          - com.protonvpn.www # Proton VPN (its RPM fails to install in a container build)
 
   - type: signing # sets up the policy & signing files for signed images
